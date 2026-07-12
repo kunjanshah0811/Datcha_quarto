@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this tool, please cite it as below."
+title: "Datcha - Tracking the Ephemeral Web: A Reproducible Computational Tool for Quantifying Temporal Change in Longitudinal Social Media Datasets"
+authors:
+  - family-names: "Shah"
+    given-names: "Kunjan"
+    affiliation: "GESIS - Leibniz Institute for the Social Sciences"
+    orchid: "https://orcid.org/0009-0008-5112-5555"
+  - family-names: "Peters"
+    given-names: "Yannik"
+    affiliation: "GESIS - Leibniz Institute for the Social Sciences"
+    orcid: "https://orcid.org/0009-0001-4879-5477"
+date-released: "2026-07-12"
+version: "1.0.0"
+url: "https://shiny.gesis.org/datcha/"
+repository-code: "https://github.com/kunjanshah0811/Datcha_quarto"
+keywords:
+  - "Data Quality"
+  - "Temporal Change"
+  - "Data Deletion"
+  - "Social Media"
+  - "Longitudinal Data"
+license: "MIT"
