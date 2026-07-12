@@ -85,10 +85,10 @@ library(stringi)
 Both datasets must be GDPR-compliant before being passed into the tool. In this context, compliance requires that all personally identifiable information - including names, usernames, and traceable IDs - has been removed or anonymized. Indirectly identifiable attributes, such as rare locations or uniquely identifying phrases, must similarly be aggregated or excluded. In accordance with the principle of data minimization, only variables strictly necessary for the intended analysis should be retained.
 
 ```{r message=FALSE, warning=FALSE}
-data1 <- read_csv("https://raw.githubusercontent.com/ECCdigital/gesis-datcha/refs/heads/develop/Data1.csv",
+data1 <- read_csv("https://raw.githubusercontent.com/kunjanshah0811/Datcha_quarto/refs/heads/main/Data1.csv",
                   locale = locale(encoding = "UTF-8"), show_col_types = FALSE)
 
-data2 <- read_csv("https://raw.githubusercontent.com/ECCdigital/gesis-datcha/refs/heads/develop/Data2.csv",
+data2 <- read_csv("https://raw.githubusercontent.com/kunjanshah0811/Datcha_quarto/refs/heads/main/data2.csv",
                   locale = locale(encoding = "UTF-8"), show_col_types = FALSE)
 
 ```
