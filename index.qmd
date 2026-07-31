@@ -88,7 +88,7 @@ Both datasets must be GDPR-compliant before being passed into the tool. In this 
 data1 <- read_csv("https://raw.githubusercontent.com/kunjanshah0811/Datcha_quarto/refs/heads/main/Data1.csv",
                   locale = locale(encoding = "UTF-8"), show_col_types = FALSE)
 
-data2 <- read_csv("https://raw.githubusercontent.com/kunjanshah0811/Datcha_quarto/refs/heads/main/data2.csv",
+data2 <- read_csv("https://raw.githubusercontent.com/kunjanshah0811/Datcha_quarto/refs/heads/main/Data2.csv",
                   locale = locale(encoding = "UTF-8"), show_col_types = FALSE)
 
 ```
