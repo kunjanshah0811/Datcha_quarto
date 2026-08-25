@@ -582,9 +582,11 @@ content remains a minor proportion in each case. This synthetic example suggests
 
 #### 4. Topic Modeling
 
-```{r message=FALSE, warning=FALSE}
-num_topics <- 5
+Topic modeling results are sensitive to the chosen number of topics (*k*). Instead of fixing this value, LDA models are pre-computed here for a range of *k* (2 to 10, mirroring the "Number of Topics" slider of the interactive Datcha app), so that the number of topics can be adjusted below without re-running any R code.
+
+```{r message=FALSE, warning=FALSE, results='hide'}
 MAX_DOCS_FOR_TOPIC_MODELING <- 8000
+topic_k_range <- 2:10
 
 topicmodels_json_ldavis_safe <- function(fitted, original_texts, dtm) {
 
@@ -628,112 +630,95 @@ topicmodels_json_ldavis_safe <- function(fitted, original_texts, dtm) {
 
   })
 }
-generate_topic_model <- function(dataset, dataset_name, folder_name) {
-  cat("## ", dataset_name, "\n\n")
-  # Guard clauses: skip datasets that are too large, too small, or empty
+
+# Cleans a dataset and builds a document-term matrix ready for LDA,
+# or returns ok = FALSE with a reason if the dataset is not suitable
+prepare_topic_dtm <- function(dataset) {
   if (nrow(dataset) > MAX_DOCS_FOR_TOPIC_MODELING) {
-
-    cat("Too many documents for topic modeling.\n\n")
-    return(NULL)
+    return(list(ok = FALSE, reason = "Too many documents for topic modeling."))
   }
-  if (
-    nrow(dataset) < 10 ||
-    all(is.na(dataset$text) | trimws(dataset$text) == "")
-  ) {
-
-    cat("Not enough meaningful documents.\n\n")
-    return(NULL)
+  if (nrow(dataset) < 10 || all(is.na(dataset$text) | trimws(dataset$text) == "")) {
+    return(list(ok = FALSE, reason = "Not enough meaningful documents."))
   }
 
-  cleaned <- text_processor$clean(
-    dataset$text,
-    use_stem = FALSE,
-    use_lemma = TRUE
-  )
-
+  cleaned <- text_processor$clean(dataset$text, use_stem = FALSE, use_lemma = TRUE)
   valid_idx <- which(nzchar(trimws(cleaned)))
 
   if (length(valid_idx) < 10) {
-
-    cat("Too few documents after cleaning.\n\n")
-    return(NULL)
+    return(list(ok = FALSE, reason = "Too few documents after cleaning."))
   }
 
   cleaned_valid <- cleaned[valid_idx]
 
-  # Build DTM and drop empty rows
   corpus <- VCorpus(VectorSource(cleaned_valid))
   dtm <- DocumentTermMatrix(corpus)
   dtm <- dtm[rowSums(as.matrix(dtm)) > 0, ]
-  if (nrow(dtm) < 8 || ncol(dtm) < 5) {
 
-    cat("Insufficient terms/documents for LDA.\n\n")
-    return(NULL)
+  if (nrow(dtm) < 8 || ncol(dtm) < 5) {
+    return(list(ok = FALSE, reason = "Insufficient terms/documents for LDA."))
   }
 
-  cat("Fitting LDA model...\n\n")
-  lda_model <- LDA(
-    dtm,
-    k = num_topics,
-    control = list(seed = 1234)
-  )
+  list(ok = TRUE, dtm = dtm, cleaned_valid = cleaned_valid)
+}
 
-  json <- topicmodels_json_ldavis_safe(
-    lda_model,
-    cleaned_valid,
-    dtm
-  )
+# Asset folder shipped with the LDAvis package (css/js), copied into every
+# output folder so each pre-computed visualization is self-contained
+ldavis_asset_source <- system.file("htmljs", package = "LDAvis")
 
-  vis_dir <- folder_name
+# Fits an LDA model for every k in k_range and writes one LDAvis folder per
+# k (folder_prefix_k<k>). Pre-computing all k values lets the slider below
+# switch between results client-side, without a running R/Shiny session
+generate_topic_models_for_range <- function(dataset, dataset_name, folder_prefix, k_range) {
 
-  dir.create(
-    vis_dir,
-    recursive = TRUE,
-    showWarnings = FALSE
-  )
+  cat("**", dataset_name, "**\n\n")
 
-  LDAvis::serVis(
-    json,
-    out.dir = vis_dir,
-    open.browser = FALSE,
-    selfcontained = TRUE
-  )
+  prep <- prepare_topic_dtm(dataset)
+  if (!prep$ok) {
+    cat(prep$reason, "\n\n")
+    return(FALSE)
+  }
 
-  # Convert absolute asset paths to relative ones so the iframe loads locally
-  html_file <- file.path(vis_dir, "index.html")
-  html_content <- readLines(
-    html_file,
-    warn = FALSE
-  ) |> paste(collapse = "\n")
-  html_content <- gsub(
-    '/lda\\.css',
-    'lda.css',
-    html_content
-  )
-  html_content <- gsub(
-    '/ldavis\\.js',
-    'ldavis.js',
-    html_content
-  )
-  html_content <- gsub(
-    '/d3\\.v3\\.js',
-    'd3.v3.js',
-    html_content
-  )
-  html_content <- gsub(
-    '/lda\\.json',
-    'lda.json',
-    html_content
-  )
-  writeLines(html_content, html_file)
+  for (k in k_range) {
 
-  # Embed the visualization in the rendered document
-  htmltools::tags$iframe(
-    src = paste0(folder_name, "/index.html"),
-    width = "100%",
-    height = "850px",
-    style = "border:none; margin-bottom:40px;"
-  )
+    lda_model <- tryCatch(
+      LDA(prep$dtm, k = k, control = list(seed = 1234)),
+      error = function(e) NULL
+    )
+    if (is.null(lda_model)) next
+
+    json <- topicmodels_json_ldavis_safe(lda_model, prep$cleaned_valid, prep$dtm)
+
+    vis_dir <- paste0(folder_prefix, "_k", k)
+    dir.create(vis_dir, recursive = TRUE, showWarnings = FALSE)
+
+    LDAvis::serVis(
+      json,
+      out.dir = vis_dir,
+      open.browser = FALSE,
+      selfcontained = TRUE
+    )
+
+    if (dir.exists(ldavis_asset_source)) {
+      for (f in c("lda.css", "ldavis.js", "d3.v3.js")) {
+        src_f <- file.path(ldavis_asset_source, f)
+        if (file.exists(src_f)) file.copy(src_f, file.path(vis_dir, f), overwrite = TRUE)
+      }
+    }
+
+    # Convert absolute asset paths to relative ones so the iframe loads locally
+    html_file <- file.path(vis_dir, "index.html")
+    if (file.exists(html_file)) {
+      html_content <- readLines(html_file, warn = FALSE) |> paste(collapse = "\n")
+      html_content <- gsub('/lda\\.css', 'lda.css', html_content)
+      html_content <- gsub('/ldavis\\.js', 'ldavis.js', html_content)
+      html_content <- gsub('/d3\\.v3\\.js', 'd3.v3.js', html_content)
+      html_content <- gsub('/lda\\.json', 'lda.json', html_content)
+      writeLines(html_content, html_file)
+    }
+  }
+
+  cat("Topic models pre-computed for k =", min(k_range), "to", max(k_range), "\n\n")
+  TRUE
 }
 
 combined_view <- bind_rows(
@@ -741,20 +726,47 @@ combined_view <- bind_rows(
   remaining_posts %>% mutate(group = "remaining")
 )
 
-generate_topic_model(
-  removed_posts,
-  "Removed Posts",
-  "ldavis_removed")
-generate_topic_model(
-  remaining_posts,
-  "Remaining Posts",
-  "ldavis_remaining"
+deletion_removed_ok   <- generate_topic_models_for_range(removed_posts,   "Removed Posts",   "ldavis_removed",   topic_k_range)
+deletion_remaining_ok <- generate_topic_models_for_range(remaining_posts, "Remaining Posts", "ldavis_remaining", topic_k_range)
+deletion_combined_ok  <- generate_topic_models_for_range(combined_view,   "Combined View",   "ldavis_combined",  topic_k_range)
+
+deletion_topic_choices <- c(
+  if (isTRUE(deletion_removed_ok))   "Removed Posts",
+  if (isTRUE(deletion_remaining_ok)) "Remaining Posts",
+  if (isTRUE(deletion_combined_ok))  "Combined View"
 )
-generate_topic_model(
-  combined_view,
-  "Combined View",
-  "ldavis_combined"
+
+deletion_topic_folders <- as.list(c(
+  "Removed Posts"   = "ldavis_removed",
+  "Remaining Posts" = "ldavis_remaining",
+  "Combined View"   = "ldavis_combined"
+)[deletion_topic_choices])
+
+ojs_define(deletion_topic_choices_ojs = deletion_topic_choices)
+ojs_define(deletion_topic_folders_ojs = deletion_topic_folders)
+```
+
+Use the slider and dropdown below to choose the number of topics (*k*) and the dataset to inspect — matching the "Number of Topics" and "Show Topics For" controls of the interactive Datcha app. The visualization updates instantly since all *k* values were pre-computed above.
+
+```{ojs}
+//| echo: false
+viewof num_topics_deletion = Inputs.range(
+  [2, 10],
+  {value: 5, step: 1, label: "Number of Topics"}
 )
+```
+
+```{ojs}
+//| echo: false
+viewof topic_dataset_deletion = Inputs.select(
+  deletion_topic_choices_ojs,
+  {label: "Show Topics For"}
+)
+```
+
+```{ojs}
+//| echo: false
+html`<iframe src="${deletion_topic_folders_ojs[topic_dataset_deletion]}_k${num_topics_deletion}/index.html" width="100%" height="850px" style="border:none; margin-bottom:40px;"></iframe>`
 ```
 Topic modeling was applied separately to removed posts, remaining posts, and a combined view using Latent Dirichlet Allocation (LDA). LDA is a probabilistic method that treats each document as a mixture of topics and each topic as a distribution over words. In the interactive visualisation, topics appear as circles; well-separated circles indicate distinct themes, while overlapping circles suggest shared vocabulary. It most be noted that LDA has multiple well-known limitations, including sensitivity to hyperparameters, the number of topics, and the quality of input text. Therefore, the results should be interpreted cautiously and in conjunction with other analyses. It should be noted the default way of how topic modeling is conducted here, might not be optimal for all datasets. Users are encouraged to experiment with different numbers of topics, preprocessing steps, and model parameters to achieve the most meaningful results for their specific data. 
 
@@ -1095,11 +1107,10 @@ within the observation window skews considerably more positive in tone. In such 
 
 
 #### 4. Topic Modeling
-```{r message=FALSE, warning=FALSE}
-num_topics <- 5
+As in the Data Deletion section, LDA models are pre-computed for a range of *k* (2 to 10), so the number of topics can be adjusted below without re-running any R code.
 
-# Portable: resolves the LDAvis asset folder on any machine
-asset_source <- system.file("htmljs", package = "LDAvis")
+```{r message=FALSE, warning=FALSE, results='hide'}
+topic_k_range_addition <- 2:10
 
 topicmodels_json_ldavis_safe <- function(fitted, original_texts, dtm) {
   valid_rows <- which(rowSums(as.matrix(dtm)) > 0)
@@ -1122,26 +1133,21 @@ topicmodels_json_ldavis_safe <- function(fitted, original_texts, dtm) {
   })
 }
 
-generate_topic_model_add <- function(dataset, dataset_name, folder_name) {
-
-  cat("###", dataset_name, "\n\n")
-
+# Cleans a dataset and builds a document-term matrix ready for LDA,
+# or returns ok = FALSE with a reason if the dataset is not suitable
+prepare_topic_dtm_addition <- function(dataset) {
   if (nrow(dataset) > 8000) {
-    cat("Too many documents for topic modeling.\n\n")
-    return(NULL)
+    return(list(ok = FALSE, reason = "Too many documents for topic modeling."))
   }
-
   if (nrow(dataset) < 10 || all(is.na(dataset$text) | trimws(dataset$text) == "")) {
-    cat("Not enough meaningful documents.\n\n")
-    return(NULL)
+    return(list(ok = FALSE, reason = "Not enough meaningful documents."))
   }
 
   cleaned <- text_processor$clean(dataset$text, use_stem = FALSE, use_lemma = TRUE)
   valid_idx <- which(nzchar(trimws(cleaned)))
 
   if (length(valid_idx) < 10) {
-    cat("Too few documents after cleaning.\n\n")
-    return(NULL)
+    return(list(ok = FALSE, reason = "Too few documents after cleaning."))
   }
 
   cleaned_valid <- cleaned[valid_idx]
@@ -1151,52 +1157,109 @@ generate_topic_model_add <- function(dataset, dataset_name, folder_name) {
   dtm <- dtm[rowSums(as.matrix(dtm)) > 0, ]
 
   if (nrow(dtm) < 8 || ncol(dtm) < 5) {
-    cat("Insufficient terms/documents for LDA.\n\n")
-    return(NULL)
+    return(list(ok = FALSE, reason = "Insufficient terms/documents for LDA."))
   }
 
-  cat("Fitting LDA model (k =", num_topics, ")...\n\n")
-
-  lda_model <- LDA(dtm, k = num_topics, control = list(seed = 1234))
-  json <- topicmodels_json_ldavis_safe(lda_model, cleaned_valid, dtm)
-
-  vis_dir <- folder_name
-  dir.create(vis_dir, recursive = TRUE, showWarnings = FALSE)
-
-  if (dir.exists(asset_source)) {
-    file.copy(file.path(asset_source, "lda.css"),   file.path(vis_dir, "lda.css"),   overwrite = TRUE)
-    file.copy(file.path(asset_source, "ldavis.js"), file.path(vis_dir, "ldavis.js"), overwrite = TRUE)
-    file.copy(file.path(asset_source, "d3.v3.js"),  file.path(vis_dir, "d3.v3.js"),  overwrite = TRUE)
-  }
-
-  LDAvis::serVis(json, out.dir = vis_dir, open.browser = FALSE, selfcontained = TRUE)
-
-  html_file <- file.path(vis_dir, "index.html")
-  if (file.exists(html_file)) {
-    html_content <- readLines(html_file, warn = FALSE) |> paste(collapse = "\n")
-    html_content <- gsub('src="/', 'src="', html_content, fixed = TRUE)
-    html_content <- gsub('href="/', 'href="', html_content, fixed = TRUE)
-    writeLines(html_content, html_file)
-
-    htmltools::tags$iframe(
-      src = paste0(vis_dir, "/index.html"),
-      width = "100%",
-      height = "850px",
-      style = "border:none; margin-bottom:40px;"
-    )
-  }
+  list(ok = TRUE, dtm = dtm, cleaned_valid = cleaned_valid)
 }
 
-original_posts <- data2 %>% filter(.data[[id_col_2]] %in% matched_ids)
+# Portable: resolves the LDAvis asset folder on any machine
+asset_source <- system.file("htmljs", package = "LDAvis")
 
-generate_topic_model_add(added_posts,    "Added Posts",    "ldavis_added")
-generate_topic_model_add(original_posts, "Original Posts", "ldavis_original")
-generate_topic_model_add(
+# Fits an LDA model for every k in k_range and writes one LDAvis folder per
+# k (folder_prefix_k<k>). Pre-computing all k values lets the slider below
+# switch between results client-side, without a running R/Shiny session
+generate_topic_models_for_range_add <- function(dataset, dataset_name, folder_prefix, k_range) {
+
+  cat("**", dataset_name, "**\n\n")
+
+  prep <- prepare_topic_dtm_addition(dataset)
+  if (!prep$ok) {
+    cat(prep$reason, "\n\n")
+    return(FALSE)
+  }
+
+  for (k in k_range) {
+
+    lda_model <- tryCatch(
+      LDA(prep$dtm, k = k, control = list(seed = 1234)),
+      error = function(e) NULL
+    )
+    if (is.null(lda_model)) next
+
+    json <- topicmodels_json_ldavis_safe(lda_model, prep$cleaned_valid, prep$dtm)
+
+    vis_dir <- paste0(folder_prefix, "_k", k)
+    dir.create(vis_dir, recursive = TRUE, showWarnings = FALSE)
+
+    if (dir.exists(asset_source)) {
+      file.copy(file.path(asset_source, "lda.css"),   file.path(vis_dir, "lda.css"),   overwrite = TRUE)
+      file.copy(file.path(asset_source, "ldavis.js"), file.path(vis_dir, "ldavis.js"), overwrite = TRUE)
+      file.copy(file.path(asset_source, "d3.v3.js"),  file.path(vis_dir, "d3.v3.js"),  overwrite = TRUE)
+    }
+
+    LDAvis::serVis(json, out.dir = vis_dir, open.browser = FALSE, selfcontained = TRUE)
+
+    html_file <- file.path(vis_dir, "index.html")
+    if (file.exists(html_file)) {
+      html_content <- readLines(html_file, warn = FALSE) |> paste(collapse = "\n")
+      html_content <- gsub('src="/', 'src="', html_content, fixed = TRUE)
+      html_content <- gsub('href="/', 'href="', html_content, fixed = TRUE)
+      writeLines(html_content, html_file)
+    }
+  }
+
+  cat("Topic models pre-computed for k =", min(k_range), "to", max(k_range), "\n\n")
+  TRUE
+}
+
+addition_added_ok    <- generate_topic_models_for_range_add(added_posts,    "Added Posts",    "ldavis_added",       topic_k_range_addition)
+addition_original_ok <- generate_topic_models_for_range_add(original_posts, "Original Posts", "ldavis_original",    topic_k_range_addition)
+addition_combined_ok <- generate_topic_models_for_range_add(
   bind_rows(added_posts %>% mutate(group = "added"),
             original_posts %>% mutate(group = "original")),
   "Combined View (Added + Original)",
-  "ldavis_combined_add"
+  "ldavis_combined_add",
+  topic_k_range_addition
 )
+
+addition_topic_choices <- c(
+  if (isTRUE(addition_added_ok))    "Added Posts",
+  if (isTRUE(addition_original_ok)) "Original Posts",
+  if (isTRUE(addition_combined_ok)) "Combined View (Added + Original)"
+)
+
+addition_topic_folders <- as.list(c(
+  "Added Posts"                      = "ldavis_added",
+  "Original Posts"                   = "ldavis_original",
+  "Combined View (Added + Original)" = "ldavis_combined_add"
+)[addition_topic_choices])
+
+ojs_define(addition_topic_choices_ojs = addition_topic_choices)
+ojs_define(addition_topic_folders_ojs = addition_topic_folders)
+```
+
+Use the slider and dropdown below to choose the number of topics (*k*) and the dataset to inspect — matching the "Number of Topics" and "Show Topics For" controls of the interactive Datcha app. The visualization updates instantly since all *k* values were pre-computed above.
+
+```{ojs}
+//| echo: false
+viewof num_topics_addition = Inputs.range(
+  [2, 10],
+  {value: 5, step: 1, label: "Number of Topics"}
+)
+```
+
+```{ojs}
+//| echo: false
+viewof topic_dataset_addition = Inputs.select(
+  addition_topic_choices_ojs,
+  {label: "Show Topics For"}
+)
+```
+
+```{ojs}
+//| echo: false
+html`<iframe src="${addition_topic_folders_ojs[topic_dataset_addition]}_k${num_topics_addition}/index.html" width="100%" height="850px" style="border:none; margin-bottom:40px;"></iframe>`
 ```
 
 Topic modeling was applied to added posts, original posts, and a combined view using LDA, following the same procedure described in the Data Deletion section. While the deleted posts showed little thematic divergence from remaining posts, the added posts exhibit a more distinct thematic profile, which is different from the original posts. For instance, the topics in the added posts are more concerned with discovery, exploration, and recommendation, often connected to free time activities and leisure. This aligns with the word frequency and keyness analyses.
