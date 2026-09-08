@@ -21,7 +21,8 @@ packages <- c(
   "diffobj",            # Visual text diffs
   "htmltools",          # HTML output helpers
   "readr",              # CSV import
-  "stringi"             # String operations
+  "stringi",            # String operations
+  "shinyBS"
 )
 
 # Install only what is missing
