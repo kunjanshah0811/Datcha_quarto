@@ -21,7 +21,7 @@ bibliography: reference.bib
 
 In this tutorial you will learn:
 
-1. **Local application of Datcha shiny app:** The tutorial demonstrates how to run the [**Datcha app**](https://shiny.gesis.org/datcha/) locally, allowing users to apply the tool to their own datasets without relying on the hosted version. This ensures that sensitive or proprietary data can be analyzed in a local environment, while also providing full access to the underlying code for transparency and reproducibility.
+1. **Local application of Datcha shiny app:** The tutorial demonstrates how to run Datcha's underlying code locally, allowing users to apply the tool to their own datasets without relying on the hosted [**Datcha app**](https://shiny.gesis.org/datcha/) version. This ensures that sensitive or proprietary data can be analyzed in a local environment, while also providing full access to the underlying code for transparency and reproducibility.
 2. **Detecting temporal change in longitudinal social media data:** The tutorial provides a practical guide on how two online platform dataset snapshots, collected at different points in time, can be systematically compared to identify three core types of change: deleted posts, newly added posts, and text-level edits. Matching is performed through unique post identifiers, making the procedure transparent and reproducible.
 2. **Assessing data quality and stability before analysis:** By quantifying how much content was removed, added, or modified between collection points, the tutorial shows how researchers can evaluate the consistency of their data and judge whether a dataset is stable enough for the intended analysis.
 3. **Characterizing the nature of changed content:** Word frequency comparisons, sentiment analysis, keyness analysis, and topic modeling are applied to removed, added, and remaining posts. These methods help to determine whether changes are random or systematic, for example, whether deleted posts differ in tone or topic from the content that persists.
@@ -36,7 +36,7 @@ structured, reproducible framework for detecting and quantifying three core type
 between-collection changes: **deletions**, **additions**, and **text-level edits**. By 
 aligning two temporally distinct dataset snapshots through unique post identifiers, the tool 
 enables researchers to assess data consistency, estimate content volatility, and make informed 
-decisions about dataset suitability prior to analysis. This tutorial is based on a full interactive RShiny App [@peters2026datcha]. However, as the app has limitations regarding data size, we offer this tutorial for the KODAQS Toolbox [@peters2026kodaqs] using Datcha's original code so that users can apply it locally to their own use cases: [**click here to open the Datcha app**](https://shiny.gesis.org/datcha/).
+decisions about dataset suitability prior to analysis. This tutorial is based on a full interactive RShiny App [@peters2026datcha]. However, as the [**Datcha app**](https://shiny.gesis.org/datcha/) has limitations regarding data size, we offer this tutorial for the KODAQS Toolbox [@peters2026kodaqs] using Datcha's original code so that users can apply it locally to their own use cases.
 This tutorial replicates the core analytical features of the Datcha app outside of its interactive interface, offering a fully scriptable and reproducible alternative for researchers who prefer direct programmatic control over their analysis pipeline.
 This tool is designed with GDPR compliance in mind, assumes that input data are anonymized/pseudonymized, and is based on data minimization principles. It is particularly relevant for studies in computational social science, platform studies, and NLP-driven content analysis.
 
@@ -69,8 +69,8 @@ library(LDAvis)         # LDA visualization
 library(diffobj)        # For visual text diffs
 library(htmltools)      # HTML tools for Shiny
 library(bslib)          # Bootstrap library for Shiny
-library(readr)
-library(stringi)
+library(readr)          # Reading data (e.g., read_csv() to import CSV files)
+library(stringi)        # String operations (e.g., stri_count() to count words per post)
 ```
 
 ### 2.2 Load Your Two Datasets
@@ -582,12 +582,31 @@ content remains a minor proportion in each case. This synthetic example suggests
 
 #### 3.1.4 Topic Modeling
 
-Topic modeling was applied separately to removed posts, remaining posts, and a combined view using Latent Dirichlet Allocation (LDA) [@Blei2003LDA]. LDA is a probabilistic method that treats each document as a mixture of topics and each topic as a distribution over words. In the interactive visualisation, topics appear as circles: well-separated circles indicate distinct themes, while overlapping circles suggest shared vocabulary. It most be noted that LDA has multiple well-known limitations, including sensitivity to hyperparameters, the number of topics, and the quality of input text. Therefore, the results should be interpreted cautiously and in conjunction with other analyses. It should be noted the default way of how topic modeling is conducted here, might not be optimal for all datasets. Users are encouraged to experiment with different numbers of topics, preprocessing steps, and model parameters to achieve the most meaningful results for their specific data. While topic modeling has the aforementioned limitations, it is often used in computational social science. Therefore, it is important to check for differences between removed and remaining posts, especially since small changes in the data can lead to different topics being discovered.
+Topic modeling was applied separately to removed posts, remaining posts, and a combined view using Latent Dirichlet Allocation (LDA) [@Blei2003LDA]. LDA is a probabilistic method that treats each document as a mixture of topics and each topic as a distribution over words. In the interactive visualisation, topics appear as circles: well-separated circles indicate distinct themes, while overlapping circles suggest shared vocabulary. It must be noted that LDA has multiple well-known limitations, including sensitivity to hyperparameters, the number of topics, and the quality of input text. Therefore, the results should be interpreted cautiously and in conjunction with other analyses. It should be noted that the default way of how topic modeling is conducted here, might not be optimal for all datasets. Users are encouraged to experiment with different numbers of topics, preprocessing steps, and model parameters to achieve the most meaningful results for their specific data. While topic modeling has the aforementioned limitations, it is often used in computational social science. Therefore, it is important to check for differences between removed and remaining posts, especially since small changes in the data can lead to different topics being discovered.
 Topic modeling results are sensitive to the chosen number of topics (*k*). Instead of using a default value, LDA models are pre-computed here for a range of *k* (2 to 10, mirroring the "Number of Topics" slider of the interactive Datcha app), so that the number of topics can be adjusted below without re-running any R code.
 
 ```{r message=FALSE, warning=FALSE, results='hide'}
 MAX_DOCS_FOR_TOPIC_MODELING <- 8000
-topic_k_range <- 2:10
+
+# Base output directory for deletion-section topic model visualizations
+deletion_vis_base <- "topic_models/deletion"
+dir.create(deletion_vis_base, recursive = TRUE, showWarnings = FALSE)
+
+# Decide k range and step based on dataset size
+n_docs <- length(removed_posts)  
+
+if (n_docs < 500) {
+  # Small dataset: finer steps, lower ceiling
+  topic_k_range <- seq(3, 15, by = 1)
+} else {
+  # Large dataset: coarser steps, higher ceiling
+  topic_k_range <- seq(5, 25, by = 5)
+}
+
+# after topic_k_range is set above
+ojs_define(topic_k_min_ojs   = min(topic_k_range))
+ojs_define(topic_k_max_ojs   = max(topic_k_range))
+ojs_define(topic_k_step_ojs  = diff(topic_k_range)[1])
 
 topicmodels_json_ldavis_safe <- function(fitted, original_texts, dtm) {
 
@@ -727,9 +746,9 @@ combined_view <- bind_rows(
   remaining_posts %>% mutate(group = "remaining")
 )
 
-deletion_removed_ok   <- generate_topic_models_for_range(removed_posts,   "Removed Posts",   "ldavis_removed",   topic_k_range)
-deletion_remaining_ok <- generate_topic_models_for_range(remaining_posts, "Remaining Posts", "ldavis_remaining", topic_k_range)
-deletion_combined_ok  <- generate_topic_models_for_range(combined_view,   "Combined View",   "ldavis_combined",  topic_k_range)
+deletion_removed_ok   <- generate_topic_models_for_range(removed_posts,   "Removed Posts",   file.path(deletion_vis_base, "ldavis_removed"),   topic_k_range)
+deletion_remaining_ok <- generate_topic_models_for_range(remaining_posts, "Remaining Posts", file.path(deletion_vis_base, "ldavis_remaining"), topic_k_range)
+deletion_combined_ok  <- generate_topic_models_for_range(combined_view,   "Combined View",   file.path(deletion_vis_base, "ldavis_combined"),  topic_k_range)
 
 deletion_topic_choices <- c(
   if (isTRUE(deletion_removed_ok))   "Removed Posts",
@@ -738,9 +757,9 @@ deletion_topic_choices <- c(
 )
 
 deletion_topic_folders <- as.list(c(
-  "Removed Posts"   = "ldavis_removed",
-  "Remaining Posts" = "ldavis_remaining",
-  "Combined View"   = "ldavis_combined"
+  "Removed Posts"   = file.path(deletion_vis_base, "ldavis_removed"),
+  "Remaining Posts" = file.path(deletion_vis_base, "ldavis_remaining"),
+  "Combined View"   = file.path(deletion_vis_base, "ldavis_combined")
 )[deletion_topic_choices])
 
 ojs_define(deletion_topic_choices_ojs = deletion_topic_choices)
@@ -752,8 +771,8 @@ Use the slider and dropdown below to choose the number of topics (*k*) and the d
 ```{ojs}
 //| echo: false
 viewof num_topics_deletion = Inputs.range(
-  [2, 10],
-  {value: 5, step: 1, label: "Number of Topics"}
+  [topic_k_min_ojs, topic_k_max_ojs],
+  {value: topic_k_min_ojs, step: topic_k_step_ojs, label: "Number of Topics"}
 )
 ```
 
@@ -784,7 +803,7 @@ This section identifies posts present in Dataset 2 that were absent from Dataset
 original_posts <- data2 %>% filter(.data[[id_col_2]] %in% matched_ids)
 
 added_count    <- nrow(added_posts)
-original_count <- nrow(original_posts)   # no () — plain data frame, not a reactive
+original_count <- nrow(original_posts)   # no () - plain data frame, not a reactive
 old_posts      <- nrow(data1)
 new_posts      <- nrow(data2)
 
@@ -1109,7 +1128,23 @@ within the observation window skews considerably more positive in tone. In such 
 As in the Data Deletion section, LDA models are pre-computed for a range of *k* (2 to 10), so the number of topics can be adjusted below without re-running any R code.
 
 ```{r message=FALSE, warning=FALSE, results='hide'}
-topic_k_range_addition <- 2:10
+# Base output directory for addition-section topic model visualizations
+addition_vis_base <- "topic_models/addition"
+dir.create(addition_vis_base, recursive = TRUE, showWarnings = FALSE)
+
+# Decide k range and step based on dataset size
+n_docs_addition <- nrow(added_posts)  
+if (n_docs_addition < 500) {
+  # Small dataset: finer steps, lower ceiling
+  topic_k_range_addition <- seq(3, 15, by = 1)
+} else {
+  # Large dataset: coarser steps, higher ceiling
+  topic_k_range_addition <- seq(5, 25, by = 5)
+}
+
+ojs_define(topic_k_min_addition_ojs  = min(topic_k_range_addition))
+ojs_define(topic_k_max_addition_ojs  = max(topic_k_range_addition))
+ojs_define(topic_k_step_addition_ojs = diff(topic_k_range_addition)[1])
 
 topicmodels_json_ldavis_safe <- function(fitted, original_texts, dtm) {
   valid_rows <- which(rowSums(as.matrix(dtm)) > 0)
@@ -1212,13 +1247,13 @@ generate_topic_models_for_range_add <- function(dataset, dataset_name, folder_pr
   TRUE
 }
 
-addition_added_ok    <- generate_topic_models_for_range_add(added_posts,    "Added Posts",    "ldavis_added",       topic_k_range_addition)
-addition_original_ok <- generate_topic_models_for_range_add(original_posts, "Original Posts", "ldavis_original",    topic_k_range_addition)
+addition_added_ok    <- generate_topic_models_for_range_add(added_posts,    "Added Posts",    file.path(addition_vis_base, "ldavis_added"),    topic_k_range_addition)
+addition_original_ok <- generate_topic_models_for_range_add(original_posts, "Original Posts", file.path(addition_vis_base, "ldavis_original"), topic_k_range_addition)
 addition_combined_ok <- generate_topic_models_for_range_add(
   bind_rows(added_posts %>% mutate(group = "added"),
             original_posts %>% mutate(group = "original")),
   "Combined View (Added + Original)",
-  "ldavis_combined_add",
+  file.path(addition_vis_base, "ldavis_combined_add"),
   topic_k_range_addition
 )
 
@@ -1229,22 +1264,22 @@ addition_topic_choices <- c(
 )
 
 addition_topic_folders <- as.list(c(
-  "Added Posts"                      = "ldavis_added",
-  "Original Posts"                   = "ldavis_original",
-  "Combined View (Added + Original)" = "ldavis_combined_add"
+  "Added Posts"                      = file.path(addition_vis_base, "ldavis_added"),
+  "Original Posts"                   = file.path(addition_vis_base, "ldavis_original"),
+  "Combined View (Added + Original)" = file.path(addition_vis_base, "ldavis_combined_add")
 )[addition_topic_choices])
 
 ojs_define(addition_topic_choices_ojs = addition_topic_choices)
 ojs_define(addition_topic_folders_ojs = addition_topic_folders)
 ```
 
-Use the slider and dropdown below to choose the number of topics (*k*) and the dataset to inspect — matching the "Number of Topics" and "Show Topics For" controls of the interactive Datcha app. The visualization updates instantly since all *k* values were pre-computed above.
+Use the slider and dropdown below to choose the number of topics (*k*) and the dataset to inspect - matching the "Number of Topics" and "Show Topics For" controls of the interactive Datcha app. The visualization updates instantly since all *k* values were pre-computed above.
 
 ```{ojs}
 //| echo: false
 viewof num_topics_addition = Inputs.range(
-  [2, 10],
-  {value: 5, step: 1, label: "Number of Topics"}
+  [topic_k_min_addition_ojs, topic_k_max_addition_ojs],
+  {value: topic_k_min_addition_ojs, step: topic_k_step_addition_ojs, label: "Number of Topics"}
 )
 ```
 
