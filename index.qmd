@@ -583,7 +583,7 @@ content remains a minor proportion in each case. This synthetic example suggests
 #### 3.1.4 Topic Modeling
 
 Topic modeling was applied separately to removed posts, remaining posts, and a combined view using Latent Dirichlet Allocation (LDA) [@Blei2003LDA]. LDA is a probabilistic method that treats each document as a mixture of topics and each topic as a distribution over words. In the interactive visualisation, topics appear as circles: well-separated circles indicate distinct themes, while overlapping circles suggest shared vocabulary. It must be noted that LDA has multiple well-known limitations, including sensitivity to hyperparameters, the number of topics, and the quality of input text. Therefore, the results should be interpreted cautiously and in conjunction with other analyses. It should be noted that the default way of how topic modeling is conducted here, might not be optimal for all datasets. Users are encouraged to experiment with different numbers of topics, preprocessing steps, and model parameters to achieve the most meaningful results for their specific data. While topic modeling has the aforementioned limitations, it is often used in computational social science. Therefore, it is important to check for differences between removed and remaining posts, especially since small changes in the data can lead to different topics being discovered.
-Topic modeling results are sensitive to the chosen number of topics (*k*). Instead of using a default value, LDA models are pre-computed here for a range of *k* (2 to 10, mirroring the "Number of Topics" slider of the interactive Datcha app), so that the number of topics can be adjusted below without re-running any R code.
+Topic modeling results are sensitive to the chosen number of topics (*k*). Instead of using a default value, LDA models are pre-computed here for a range of *k* (adjusted automatically based on dataset size, mirroring the "Number of Topics" slider of the interactive Datcha app), so that the number of topics can be adjusted below without re-running any R code.
 
 ```{r message=FALSE, warning=FALSE, results='hide'}
 MAX_DOCS_FOR_TOPIC_MODELING <- 8000
@@ -766,7 +766,7 @@ ojs_define(deletion_topic_choices_ojs = deletion_topic_choices)
 ojs_define(deletion_topic_folders_ojs = deletion_topic_folders)
 ```
 
-Use the slider and dropdown below to choose the number of topics (*k*) and the dataset to inspect — matching the "Number of Topics" and "Show Topics For" controls of the interactive Datcha app. The visualization updates instantly since all *k* values were pre-computed above.
+Use the slider and dropdown below to choose the number of topics (*k*) and the dataset to inspect - matching the "Number of Topics" and "Show Topics For" controls of the interactive Datcha app. All k values are pre-computed, so the visualization updates instantly. To see a topic's top terms, **click on its circle**, then **try moving the λ (lambda) slider** to see how it changes the term ranking.
 
 ```{ojs}
 //| echo: false
@@ -1125,7 +1125,7 @@ sentiment in added posts is a notable contrast, suggesting that newly introduced
 within the observation window skews considerably more positive in tone. In such a case, we recommend consider the context of the data and use case, as well as potential biases in user behavior that may influence the sentiment profile of newly added posts. In this artificial example, selecting only one of the two collection points may have introduced a bias toward more positive or negative content, which could be due to various factors such as user engagement patterns, platform moderation, or temporal trends in posting behavior. We recommend being as transparent as possible about the data collection process and considering potential biases when interpreting sentiment differences between added and original posts.
 
 #### 3.2.4 Topic Modeling
-As in the Data Deletion section, LDA models are pre-computed for a range of *k* (2 to 10), so the number of topics can be adjusted below without re-running any R code.
+As in the Data Deletion section, LDA models are pre-computed for a range of *k* (adjusted automatically based on dataset size), so the number of topics can be adjusted below without re-running any R code.
 
 ```{r message=FALSE, warning=FALSE, results='hide'}
 # Base output directory for addition-section topic model visualizations
@@ -1273,8 +1273,7 @@ ojs_define(addition_topic_choices_ojs = addition_topic_choices)
 ojs_define(addition_topic_folders_ojs = addition_topic_folders)
 ```
 
-Use the slider and dropdown below to choose the number of topics (*k*) and the dataset to inspect - matching the "Number of Topics" and "Show Topics For" controls of the interactive Datcha app. The visualization updates instantly since all *k* values were pre-computed above.
-
+Use the slider and dropdown below to choose the number of topics (*k*) and the dataset to inspect - matching the "Number of Topics" and "Show Topics For" controls of the interactive Datcha app. All *k* values are pre-computed, so the visualization updates instantly. **Click a topic circle to see its top terms, then try the λ slider.**
 ```{ojs}
 //| echo: false
 viewof num_topics_addition = Inputs.range(
