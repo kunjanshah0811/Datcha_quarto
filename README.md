@@ -27,6 +27,7 @@ Live app: [shiny.gesis.org/datcha](https://shiny.gesis.org/datcha/)
 | `install.R` | Installs all R packages needed. |
 | `reference.bib` | Citations used in the tutorial. |
 | `citation.cff` | How to cite this tool. |
+| `LICENSE` | MIT licence terms. |
 | `manifest.json` | Package versions, for deployment. |
 
 Both CSV files have 2 columns: `col_id` and `text`.
@@ -89,4 +90,4 @@ If you find any issues or something not working, kindly contact Dr Yannik Peters
 
 ## Cite
 
-See `citation.cff`. Licence: MIT.
+See `citation.cff`. Licence: [MIT](LICENSE).
