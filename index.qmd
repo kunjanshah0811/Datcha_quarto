@@ -11,6 +11,7 @@ format:
   pdf: default
 bibliography: reference.bib
 biblio-style: apa
+prefer-html: true
 ---
 
 # **At a glance**
