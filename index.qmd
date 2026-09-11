@@ -7,8 +7,8 @@ author:
 image: images/tool_icon.png
 image-alt: Datcha
 format:
-  html: default
-  pdf: default
+  html:
+    embed-resources: true
 bibliography: reference.bib
 biblio-style: apa
 prefer-html: true
