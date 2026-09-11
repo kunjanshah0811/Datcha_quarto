@@ -4,17 +4,13 @@ subtitle: "A Tool to Track Data Changes and Measure (In)Consistency in Mobile Pl
 author:
   - name: "Kunjan Shah"
   - name: "Yannik Peters"
-#image: images/tool_icon.png #takes from a folder "images" in your github repository the tool icon file  
-date: "today"
-date format: "long"
+image: images/tool_icon.png
+image-alt: Datcha
 format:
-  html: 
-    toc: true           # Enable TOC
-    toc-depth: 5        # Levels to include (default: 3)
-    toc-location: right # Or 'right' (floating), 'body'
-    toc-expand: true
-  #pdf: default
+  html: default
+  pdf: default
 bibliography: reference.bib
+biblio-style: apa
 ---
 
 # **At a glance**
