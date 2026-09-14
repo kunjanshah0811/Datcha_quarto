@@ -7,8 +7,9 @@ author:
 image: images/tool_icon.png
 image-alt: Datcha
 format:
-  html:
-    embed-resources: true
+  markdown:
+    prefer-html: true
+    template: markdown-template.md
 bibliography: reference.bib
 biblio-style: apa
 prefer-html: true
