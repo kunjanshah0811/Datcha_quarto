@@ -72,6 +72,10 @@ library(htmltools)      # HTML tools for Shiny
 library(bslib)          # Bootstrap library for Shiny
 library(readr)          # Reading data (e.g., read_csv() to import CSV files)
 library(stringi)        # String operations (e.g., stri_count() to count words per post)
+```
+
+```{r ojs, message=FALSE, warning=FALSE}
+#| echo: false
 
 # Emit static OJS definitions into the Markdown/HTML output.
 # Quarto injects its static OJS data definitions only for HTML output,
