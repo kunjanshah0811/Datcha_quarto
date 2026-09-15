@@ -12,6 +12,7 @@ format:
   markdown:
     prefer-html: true
     template: markdown-template.md
+resources: topic_models_datafiles
 bibliography: reference.bib
 biblio-style: apa
 prefer-html: true
@@ -31,11 +32,11 @@ In this tutorial you will learn:
 
 Social media platforms are inherently dynamic and ephemeral environments in which content is continuously created, modified, and removed [@weller2026can]. When researchers collect datasets from such platforms at different points in time, the resulting snapshots are rarely identical, i.e., posts may be deleted [@khan2025characterization; @buehling2024message] by users or platform moderation systems, new content may emerge, and existing posts may undergo textual revision. These temporal discrepancies, if left unexamined, can introduce systematic bias into longitudinal analyses and compromise the reproducibility of findings.
 
-Datcha (**Dat**a **cha**nge) addresses this methodological gap by providing a 
-structured, reproducible framework for detecting and quantifying three core types of 
-between-collection changes: **deletions**, **additions**, and **text-level edits**. By 
-aligning two temporally distinct dataset snapshots through unique post identifiers, the tool 
-enables researchers to assess data consistency, estimate content volatility, and make informed 
+Datcha (**Dat**a **cha**nge) addresses this methodological gap by providing a
+structured, reproducible framework for detecting and quantifying three core types of
+between-collection changes: **deletions**, **additions**, and **text-level edits**. By
+aligning two temporally distinct dataset snapshots through unique post identifiers, the tool
+enables researchers to assess data consistency, estimate content volatility, and make informed
 decisions about dataset suitability prior to analysis. This tutorial is based on a full interactive RShiny App [@peters2026datcha]. However, as the [**Datcha app**](https://shiny.gesis.org/datcha/) has limitations regarding data size, we offer this tutorial for the KODAQS Toolbox [@peters2026kodaqs] using Datcha's original code so that users can apply it locally to their own use cases.
 This tutorial replicates the core analytical features of the Datcha app outside of its interactive interface, offering a fully scriptable and reproducible alternative for researchers who prefer direct programmatic control over their analysis pipeline.
 This tool is designed with GDPR compliance in mind, assumes that input data are anonymized/pseudonymized, and is based on data minimization principles. It is particularly relevant for studies in computational social science, platform studies, and NLP-driven content analysis.
@@ -176,11 +177,11 @@ output_text <- paste0(
   "Dataset 1: ", nrow(data1),
   " rows | ID column: ", id_col_1,
   " | Date: ", format(date_1, "%Y-%m-%d"), "\n",
-  
+
   "Dataset 2: ", nrow(data2),
   " rows | ID column: ", id_col_2,
   " | Date: ", format(date_2, "%Y-%m-%d"), "\n\n",
-  
+
   "Analysis ready!\n",
   "Number of Deleted Posts : ", nrow(removed_posts), "\n",
   "Number of Added Posts   : ", nrow(added_posts), "\n",
@@ -205,24 +206,24 @@ text_processor <- list(
   clean = function(text, use_stem = FALSE, use_lemma = TRUE) {
     # Use VCorpus + plain functions to avoid SimpleCorpus warnings
     corpus <- VCorpus(VectorSource(text))
-    
+
     corpus <- tm_map(corpus, content_transformer(tolower))
     corpus <- tm_map(corpus, removeNumbers)
     corpus <- tm_map(corpus, removePunctuation)
     corpus <- tm_map(corpus, removeWords, stopwords("en"))
     corpus <- tm_map(corpus, stripWhitespace)
-    
+
     if (use_stem) corpus <- tm_map(corpus, stemDocument)
-    
+
     if (use_lemma) {
       txt <- sapply(corpus, as.character)
       txt <- textstem::lemmatize_strings(txt)
       return(txt)
     }
-    
+
     sapply(corpus, as.character)
   },
-  
+
   # Fixed get_freq – no gram_type argument needed for unigrams
   get_freq = function(text) {
     corpus <- VCorpus(VectorSource(text))
@@ -256,7 +257,7 @@ remaining_n <- nrow(remaining_posts)
 
 # Prepare output
 if (days <= 0) {
-  
+
   output_text <- paste0(
     "Deletion Statistics\n",
     "Consistency              : ", round(remaining_n / total * 100, 1), "%\n",
@@ -264,11 +265,11 @@ if (days <= 0) {
     "Daily Removed Posts      : N/A (invalid date range)\n",
     "Daily Removal Rate       : N/A (invalid date range)"
   )
-  
+
 } else {
-  
+
   daily_rate <- round(removed_n / days / total * 100, 2)
-  
+
   output_text <- paste0(
     "Deletion Statistics\n",
     "Consistency              : ", round(remaining_n / total * 100, 1), "%\n",
@@ -299,7 +300,7 @@ highchart() %>%
   hc_title(text = "Removed Posts") %>%
   hc_tooltip(crosshairs = TRUE, shared = FALSE, useHTML = TRUE,
               formatter = JS("function() {
-                return '<br/><span style=\"color:' + this.series.color + '\">' + 
+                return '<br/><span style=\"color:' + this.series.color + '\">' +
                        this.point.category + '</span>: <b>' + this.point.y + '</b>';
               }")) %>%
   hc_xAxis(categories = word_freq_removed$word,
@@ -309,10 +310,10 @@ highchart() %>%
                 color = "#4CAF50", showInLegend = FALSE) %>%
   hc_exporting(enabled = TRUE)
 ```
-In the removed posts, the most frequently occurring term is *just* (34 times), followed 
-by *new* (18) and *find* (9). Other recurring terms include *change*, *get*, *know*, 
-*life*, *month*, *nature*, and *sleep* (each appearing 6-7 times). The lexical profile 
-suggests that removed content was largely centred around everyday personal experiences 
+In the removed posts, the most frequently occurring term is *just* (34 times), followed
+by *new* (18) and *find* (9). Other recurring terms include *change*, *get*, *know*,
+*life*, *month*, *nature*, and *sleep* (each appearing 6-7 times). The lexical profile
+suggests that removed content was largely centred around everyday personal experiences
 and routine observations.
 ```{r message=FALSE, warning=FALSE}
 # Top words in Remaining posts
@@ -327,7 +328,7 @@ highchart() %>%
   hc_title(text = "Remaining Posts") %>%
   hc_tooltip(crosshairs = TRUE, shared = FALSE, useHTML = TRUE,
               formatter = JS("function() {
-                return '<br/><span style=\"color:' + this.series.color + '\">' + 
+                return '<br/><span style=\"color:' + this.series.color + '\">' +
                        this.point.category + '</span>: <b>' + this.point.y + '</b>';
               }")) %>%
   hc_xAxis(categories = word_freq_remaining$word,
@@ -337,11 +338,11 @@ highchart() %>%
                 color = "#2196F3", showInLegend = FALSE) %>%
   hc_exporting(enabled = TRUE)
 ```
-In the remaining posts, *just* also dominates (60 times), followed by *get* and *new* 
-(22 each), *time* (18), and *day* (17). The higher raw frequencies in remaining posts 
-are expected given the larger subset size. Shared high-frequency terms across both 
-groups indicate no substantial differences and broad topical overlap. At the same time, 
-differences in lower-ranked terms may reflect content-specific variation worth 
+In the remaining posts, *just* also dominates (60 times), followed by *get* and *new*
+(22 each), *time* (18), and *day* (17). The higher raw frequencies in remaining posts
+are expected given the larger subset size. Shared high-frequency terms across both
+groups indicate no substantial differences and broad topical overlap. At the same time,
+differences in lower-ranked terms may reflect content-specific variation worth
 exploring further. One option is to conduct a keyness analysis, which statistically identifies terms that are over- or under-represented in removed posts relative to remaining posts.
 
 #### 3.1.2 Keyness Analysis
@@ -358,7 +359,7 @@ keyness_analyzer <- list(
       group = c(rep("removed", nrow(removed_posts)),
                 rep("remaining", nrow(remaining_posts)))
     )
-    
+
     frequency_table_creator(
       df = combined_df,
       text_field = "text",
@@ -370,7 +371,7 @@ keyness_analyzer <- list(
       lemmatize = TRUE
     )
   },
-  
+
   calculate_keyness = function(frequency_table) {
     keyness_measure_calculator(
       frequency_table,
@@ -582,23 +583,23 @@ get_extreme_text <- function(text_vector, type = "positive") {
 output_text <- paste0(
   "**Most positive removed post:**\n",
   get_extreme_text(removed_posts$text, "positive"),
-  
+
   "\n\n**Most negative removed post:**\n",
   get_extreme_text(removed_posts$text, "negative"),
-  
+
   "\n\n**Most positive remaining post:**\n",
   get_extreme_text(remaining_posts$text, "positive"),
-  
+
   "\n\n**Most negative remaining post:**\n",
   get_extreme_text(remaining_posts$text, "negative")
 )
 
 cat(output_text)
 ```
-Among removed posts, approximately 42.6% were classified as positive, 39.8% as neutral, 
-and 17.6% as negative. The distribution of remaining posts follows a closely comparable 
-pattern, with 41.2% positive, 41.5% neutral, and 17.3% negative. Across both subsets, 
-positive and neutral content collectively responsible for over 80% of posts, while negative 
+Among removed posts, approximately 42.6% were classified as positive, 39.8% as neutral,
+and 17.6% as negative. The distribution of remaining posts follows a closely comparable
+pattern, with 41.2% positive, 41.5% neutral, and 17.3% negative. Across both subsets,
+positive and neutral content collectively responsible for over 80% of posts, while negative
 content remains a minor proportion in each case. This synthetic example suggests that deleted posts do not exhibit a markedly different sentiment profile from the content that persists, indicating that removal may not be systematically associated with affective tone. If removed posts had a higher proportion of negative sentiment, this could suggest that users or platform moderation systems selectively removed more negatively valenced content. We argue that sentiment differences should be interpreted case by case, so we do not propose a generalizable threshold for what constitutes a meaningful difference in sentiment distribution. Instead, researchers should consider the specific context of their data and research questions when evaluating sentiment differences between removed and remaining posts.
 
 
@@ -615,7 +616,7 @@ deletion_vis_base <- "topic_models_datafiles/deletion"
 dir.create(deletion_vis_base, recursive = TRUE, showWarnings = FALSE)
 
 # Decide k range and step based on dataset size
-n_docs <- length(removed_posts)  
+n_docs <- length(removed_posts)
 
 if (n_docs < 500) {
   # Small dataset: finer steps, lower ceiling
@@ -823,7 +824,7 @@ When inspecting the intertopic distance maps, we observe both differences and si
 
 ### 3.2 Data Addition
 
-This section identifies posts present in Dataset 2 that were absent from Dataset 1, treating their appearance as new content added within the observed time window. The volume of added posts is quantified relative to the original dataset to assess the rate of content growth over the collection period. In our artificial example, the consistency is 66.4%. The data addition is 33.7% with a daily addition of 3.4 posts per day and a daily addition rate of 1.12% of total posts per day within one month. 
+This section identifies posts present in Dataset 2 that were absent from Dataset 1, treating their appearance as new content added within the observed time window. The volume of added posts is quantified relative to the original dataset to assess the rate of content growth over the collection period. In our artificial example, the consistency is 66.4%. The data addition is 33.7% with a daily addition of 3.4 posts per day and a daily addition rate of 1.12% of total posts per day within one month.
 
 ```{r message=FALSE, warning=FALSE}
 # Summary Statistics for Data Addition
@@ -870,7 +871,7 @@ highchart() %>%
   hc_title(text = "Added Posts") %>%
   hc_tooltip(crosshairs = TRUE, shared = FALSE, useHTML = TRUE,
               formatter = JS("function() {
-                return '<br/><span style=\"color:' + this.series.color + '\">' + 
+                return '<br/><span style=\"color:' + this.series.color + '\">' +
                        this.point.category + '</span>: <b>' + this.point.y + '</b>';
               }")) %>%
   hc_xAxis(categories = word_freq_added$word,
@@ -881,11 +882,11 @@ highchart() %>%
   hc_exporting(enabled = TRUE)
 
 ```
-Among added posts, the most frequent term is *new* (25 times), followed by *think* (20) 
-and a cluster of terms; *check*, *explore*, *highly*, *recommend*, *relate*, *spot*, 
-and *today* - each appearing 17 times. Further down, *company*, *good*, *plan*, *relax*, 
-and *weekend* occur 13 times each. The lexical profile of added posts suggests a 
-notably discovery and recommendation-oriented tone, with terms pointing toward 
+Among added posts, the most frequent term is *new* (25 times), followed by *think* (20)
+and a cluster of terms; *check*, *explore*, *highly*, *recommend*, *relate*, *spot*,
+and *today* - each appearing 17 times. Further down, *company*, *good*, *plan*, *relax*,
+and *weekend* occur 13 times each. The lexical profile of added posts suggests a
+notably discovery and recommendation-oriented tone, with terms pointing toward
 exploratory and evaluative content.
 ```{r message=FALSE, warning=FALSE}
 # Define original posts (posts present in Dataset 1 and still in Dataset 2)
@@ -903,7 +904,7 @@ highchart() %>%
   hc_title(text = "Original Posts") %>%
   hc_tooltip(crosshairs = TRUE, shared = FALSE, useHTML = TRUE,
               formatter = JS("function() {
-                return '<br/><span style=\"color:' + this.series.color + '\">' + 
+                return '<br/><span style=\"color:' + this.series.color + '\">' +
                        this.point.category + '</span>: <b>' + this.point.y + '</b>';
               }")) %>%
   hc_xAxis(categories = word_freq_original$word,
@@ -913,8 +914,8 @@ highchart() %>%
                 color = "#2196F3", showInLegend = FALSE) %>%
   hc_exporting(enabled = TRUE)
 ```
-In original posts, *just* dominates (60 times), followed by *get* and *new* (22 each) 
-and *time* (18). Compared to added posts, original posts reflect more general, 
+In original posts, *just* dominates (60 times), followed by *get* and *new* (22 each)
+and *time* (18). Compared to added posts, original posts reflect more general,
 everyday language with less directional or evaluative character. Still, we find some overlap in high-frequency terms, which appears prominently in both subsets (e.g.new, day, today, good). This suggests that while added posts introduce new content, they also share some lexical commonality with existing posts.
 
 #### 3.2.2 Keyness Analysis
@@ -930,7 +931,7 @@ keyness_analyzer_add <- list(
       group = c(rep("added", nrow(added_posts)),
                 rep("original", nrow(original_posts)))
     )
-    
+
     frequency_table_creator(
       df = combined_df,
       text_field = "text",
@@ -942,7 +943,7 @@ keyness_analyzer_add <- list(
       lemmatize = TRUE
     )
   },
-  
+
   calculate_keyness = function(frequency_table) {
     keyness_measure_calculator(
       frequency_table,
@@ -1057,7 +1058,7 @@ div(style = "margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius
   )
 )
 ```
-Terms statistically overrepresented in added posts include *check*, *relate*, *explore*, 
+Terms statistically overrepresented in added posts include *check*, *relate*, *explore*,
 *spot*, and *think*, all with high log-likelihood values and positive log ratios - indicating these words appear far more frequently in added content than would be expected by chance. Conversely, *time*, *find*, *now*, *first*, and *just* are more characteristic of original posts. This pattern reinforces the word frequency findings, suggesting that added posts carry a more active, exploratory vocabulary relative to the baseline corpus.
 
 #### 3.2.3 Sentiment Analysis
@@ -1072,25 +1073,25 @@ get_sentiment_distribution <- function(text_vector) {
         percentage = c(0, 0, 0)
       ))
     }
-    
+
     # Process in chunks for large datasets
     chunk_size <- 500
     chunks <- split(text_vector, ceiling(seq_along(text_vector)/chunk_size))
-    
+
     results <- lapply(chunks, function(chunk) {
       sentences <- get_sentences(chunk)
       sentiment(sentences)
     })
-    
+
     all_scores <- unlist(lapply(results, function(x) x$sentiment))
-    
-    category <- cut(all_scores, 
+
+    category <- cut(all_scores,
                     breaks = c(-Inf, -0.01, 0.01, Inf),
                     labels = c("Negative", "Neutral", "Positive"))
-    
+
     counts <- table(factor(category, levels = c("Negative", "Neutral", "Positive")))
     percentages <- prop.table(counts) * 100
-    
+
     data.frame(
       category = names(percentages),
       percentage = as.numeric(percentages)
@@ -1132,23 +1133,23 @@ highchart() %>%
 output_text <- paste0(
   "**Most positive added post:**\n",
   get_extreme_text(added_posts$text, "positive"),
-  
+
   "\n\n**Most negative added post:**\n",
   get_extreme_text(added_posts$text, "negative"),
-  
+
   "\n\n**Most positive original post:**\n",
   get_extreme_text(original_posts$text, "positive"),
-  
+
   "\n\n**Most negative original post:**\n",
   get_extreme_text(original_posts$text, "negative")
 )
 
 cat(output_text)
 ```
-Among added posts, 58.3% were classified as positive, 39.2% as neutral, and only 2.5% 
-as negative; a markedly more positive distribution compared to original posts, which 
-show 41.2% positive, 41.5% neutral, and 17.3% negative. The near-absence of negative 
-sentiment in added posts is a notable contrast, suggesting that newly introduced content 
+Among added posts, 58.3% were classified as positive, 39.2% as neutral, and only 2.5%
+as negative; a markedly more positive distribution compared to original posts, which
+show 41.2% positive, 41.5% neutral, and 17.3% negative. The near-absence of negative
+sentiment in added posts is a notable contrast, suggesting that newly introduced content
 within the observation window skews considerably more positive in tone. In such a case, we recommend consider the context of the data and use case, as well as potential biases in user behavior that may influence the sentiment profile of newly added posts. In this artificial example, selecting only one of the two collection points may have introduced a bias toward more positive or negative content, which could be due to various factors such as user engagement patterns, platform moderation, or temporal trends in posting behavior. We recommend being as transparent as possible about the data collection process and considering potential biases when interpreting sentiment differences between added and original posts.
 
 #### 3.2.4 Topic Modeling
@@ -1160,7 +1161,7 @@ addition_vis_base <- "topic_models_datafiles/addition"
 dir.create(addition_vis_base, recursive = TRUE, showWarnings = FALSE)
 
 # Decide k range and step based on dataset size
-n_docs_addition <- nrow(added_posts)  
+n_docs_addition <- nrow(added_posts)
 if (n_docs_addition < 500) {
   # Small dataset: finer steps, lower ceiling
   topic_k_range_addition <- seq(3, 15, by = 1)
@@ -1371,14 +1372,14 @@ output_text <- paste0(
 
 cat(output_text)
 ```
-In our synthetic data, out of 200 posts matched across both collection points, only 3 were found to have 
-different textual content - yielding an edited post ratio of 1.5%, indicating that 
+In our synthetic data, out of 200 posts matched across both collection points, only 3 were found to have
+different textual content - yielding an edited post ratio of 1.5%, indicating that
 the vast majority of content remained unchanged between the two snapshots.
 
-The mean edit distance of 0.13 reflects the average number of character-level 
-changes made per post, suggesting that edits were minimal in absolute terms. The 
-mean normalized distance of 0.0018 further contextualizes this figure relative to 
-post length, confirming that modifications affected a very small proportion of each 
+The mean edit distance of 0.13 reflects the average number of character-level
+changes made per post, suggesting that edits were minimal in absolute terms. The
+mean normalized distance of 0.0018 further contextualizes this figure relative to
+post length, confirming that modifications affected a very small proportion of each
 post's total characters.
 
 ```{r message=FALSE, warning=FALSE}
@@ -1403,9 +1404,9 @@ apply_diff <- function(text_before, text_after) {
             style = list(html.output = "diff.w.style"),
             line.limit = 200)       # Prevent overly long output
   )
-  
+
   html <- gsub("<div class='diffobj-line'><div class='diffobj-header'>@@.*?@@</div></div>", "", html, perl = TRUE)
-  
+
   paste0(
     "<div style='font-family: monospace; font-size: 0.95em; line-height: 1.4; ",
     "white-space: pre-wrap; word-wrap: break-word; max-height: 400px; overflow-y: auto; ",
@@ -1445,35 +1446,35 @@ datatable(
   class = "cell-border stripe hover compact"
 )
 ```
-Inspecting the three edited posts directly reveals the nature of these changes. 
-Post 1 shows a hashtag substitution - *#fitness* was replaced with *#spritual* - 
-while *#motivation* was retained, indicating a deliberate retagging rather than 
-content revision (edit distance: 17, normalized: 0.26). Post 200 reflects a minor 
-structural edit in which the hashtag *#timing* was removed from an otherwise 
-unchanged post (edit distance: 8, normalized: 0.09). Post 2 presents the most 
-subtle change - the dollar sign preceding *7* was removed, leaving the numerical 
-value intact (edit distance: 1, normalized: 0.01). Collectively, the edits appear 
-to be surface-level adjustments to metadata and formatting rather than substantive 
+Inspecting the three edited posts directly reveals the nature of these changes.
+Post 1 shows a hashtag substitution - *#fitness* was replaced with *#spritual* -
+while *#motivation* was retained, indicating a deliberate retagging rather than
+content revision (edit distance: 17, normalized: 0.26). Post 200 reflects a minor
+structural edit in which the hashtag *#timing* was removed from an otherwise
+unchanged post (edit distance: 8, normalized: 0.09). Post 2 presents the most
+subtle change - the dollar sign preceding *7* was removed, leaving the numerical
+value intact (edit distance: 1, normalized: 0.01). Collectively, the edits appear
+to be surface-level adjustments to metadata and formatting rather than substantive
 content revisions.
 
 # 4. Discussion
-In this tutorial, we used an artificial data set to apply the code of the Datcha Shiny App. Instead of just showcasing the App itself, we used this tutorial to demonstrate the actual code of Datcha. The main advantage of this is that some of the limitations of the Datcha App can be avoided when running the analysis locally. In our example case analysis, we examined 200 matched posts collected 30 days apart, tracking what 
-changed, what disappeared, and what was newly added over that period. One third of 
-the original posts were no longer present in the second snapshot, while a comparable 
-volume of new content had appeared - signalling that the platform's content landscape 
-shifted meaningfully within a single month. Edited posts were rare and minor, mostly 
+In this tutorial, we used an artificial data set to apply the code of the Datcha Shiny App. Instead of just showcasing the App itself, we used this tutorial to demonstrate the actual code of Datcha. The main advantage of this is that some of the limitations of the Datcha App can be avoided when running the analysis locally. In our example case analysis, we examined 200 matched posts collected 30 days apart, tracking what
+changed, what disappeared, and what was newly added over that period. One third of
+the original posts were no longer present in the second snapshot, while a comparable
+volume of new content had appeared - signalling that the platform's content landscape
+shifted meaningfully within a single month. Edited posts were rare and minor, mostly
 limited to hashtag adjustments rather than substantive rewrites.
 
-The sentiment and lexical profiles of removed and remaining posts were broadly similar, 
-suggesting that deletion was not strongly driven by content tone. Added posts, however, 
-showed a noticeably more positive and recommendation-oriented character, which may 
-reflect organic shifts in user behaviour or platform dynamics during the observation 
+The sentiment and lexical profiles of removed and remaining posts were broadly similar,
+suggesting that deletion was not strongly driven by content tone. Added posts, however,
+showed a noticeably more positive and recommendation-oriented character, which may
+reflect organic shifts in user behaviour or platform dynamics during the observation
 window.
 
-For computational scientists, working with social media data, such a tool serve as a template  to systematically compare social media data regarding its consistency. Because data collected at one point in time may look quite different from 
-one collected only weeks later. Before running any analysis, 
-it is worth checking how stable the data actually is. Where possible, collecting data at multiple time points 
-rather than just two would allow for a more granular understanding of how and when 
-content changes occur. While this tool has already mentioned methodological limitations, it is important to note that the analysis is based on a synthetic dataset and may not fully capture the complexities of real-world social media data. The actual limitations of the tool come from methodological reasons, e.g. the use of LDA for topic modeling or a dictionary-based approach for sentiment analysis. However, as the original Shiny App needs efficient computation, these approaches have been considered as a trade-off between speed and accuracy. In practice, users should be aware of these limitations and consider complementary methods or more advanced techniques for deeper analysis. Despite this, we still think that the methods employed can make differences visible because the focus is the comparison of two datasets with the same deterministic method rather than the absolute quality of the analysis. The methods used in this tutorial are not meant to provide a definitive analysis of social media data, but rather to reveal differences between the two data sets is a systematic manner. 
+For computational scientists, working with social media data, such a tool serve as a template  to systematically compare social media data regarding its consistency. Because data collected at one point in time may look quite different from
+one collected only weeks later. Before running any analysis,
+it is worth checking how stable the data actually is. Where possible, collecting data at multiple time points
+rather than just two would allow for a more granular understanding of how and when
+content changes occur. While this tool has already mentioned methodological limitations, it is important to note that the analysis is based on a synthetic dataset and may not fully capture the complexities of real-world social media data. The actual limitations of the tool come from methodological reasons, e.g. the use of LDA for topic modeling or a dictionary-based approach for sentiment analysis. However, as the original Shiny App needs efficient computation, these approaches have been considered as a trade-off between speed and accuracy. In practice, users should be aware of these limitations and consider complementary methods or more advanced techniques for deeper analysis. Despite this, we still think that the methods employed can make differences visible because the focus is the comparison of two datasets with the same deterministic method rather than the absolute quality of the analysis. The methods used in this tutorial are not meant to provide a definitive analysis of social media data, but rather to reveal differences between the two data sets is a systematic manner.
 
 # 5. Literature
