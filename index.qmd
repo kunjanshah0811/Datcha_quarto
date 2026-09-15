@@ -7,6 +7,8 @@ author:
 image: images/tool_icon.png
 image-alt: Datcha
 format:
+  html:
+    embed-resources: true
   markdown:
     prefer-html: true
     template: markdown-template.md
@@ -69,6 +71,28 @@ library(htmltools)      # HTML tools for Shiny
 library(bslib)          # Bootstrap library for Shiny
 library(readr)          # Reading data (e.g., read_csv() to import CSV files)
 library(stringi)        # String operations (e.g., stri_count() to count words per post)
+
+# Emit static OJS definitions into the Markdown/HTML output.
+# Quarto injects its static OJS data definitions only for HTML output,
+# not for Markdown output (even with prefer-html: true). We therefore
+# emit the required <script type="ojs-define"> block ourselves so that
+# the qmd -> md -> html pipeline has the data the OJS cells need.
+# (The helper name deliberately avoids the ojs-define token, which
+# would make Quarto re-run its OJS compiler when rendering the .md.)
+ojs_static_define <- function(...) {
+  vars <- rlang::list2(...)
+  nm <- names(vars)
+  if (is.null(nm)) nm <- rep_len("", length(vars))
+  contents <- jsonlite::toJSON(
+    list(contents = I(mapply(
+      function(nm, val) list(name = nm, value = val),
+      nm, vars, SIMPLIFY = FALSE, USE.NAMES = FALSE
+    ))),
+    dataframe = "columns", null = "null", na = "null",
+    auto_unbox = TRUE, digits = NA
+  )
+  cat('\n<script type="ojs-define">\n', contents, '\n</script>\n', sep = "")
+}
 ```
 
 ### 2.2 Load Your Two Datasets
@@ -601,10 +625,7 @@ if (n_docs < 500) {
   topic_k_range <- seq(5, 25, by = 5)
 }
 
-# after topic_k_range is set above
-ojs_define(topic_k_min_ojs   = min(topic_k_range))
-ojs_define(topic_k_max_ojs   = max(topic_k_range))
-ojs_define(topic_k_step_ojs  = diff(topic_k_range)[1])
+# topic_k_* are exported to OJS after this chunk below
 
 topicmodels_json_ldavis_safe <- function(fitted, original_texts, dtm) {
 
@@ -760,8 +781,16 @@ deletion_topic_folders <- as.list(c(
   "Combined View"   = file.path(deletion_vis_base, "ldavis_combined")
 )[deletion_topic_choices])
 
-ojs_define(deletion_topic_choices_ojs = deletion_topic_choices)
-ojs_define(deletion_topic_folders_ojs = deletion_topic_folders)
+```
+
+```{r results='asis', echo=FALSE, message=FALSE, warning=FALSE}
+ojs_static_define(
+  topic_k_min_ojs            = min(topic_k_range),
+  topic_k_max_ojs            = max(topic_k_range),
+  topic_k_step_ojs           = diff(topic_k_range)[1],
+  deletion_topic_choices_ojs = deletion_topic_choices,
+  deletion_topic_folders_ojs = deletion_topic_folders
+)
 ```
 
 Use the slider and dropdown below to choose the number of topics (*k*) and the dataset to inspect - matching the "Number of Topics" and "Show Topics For" controls of the interactive Datcha app. All k values are pre-computed, so the visualization updates instantly. To see a topic's top terms, **click on its circle**, then **try moving the λ (lambda) slider** to see how it changes the term ranking.
@@ -1140,9 +1169,7 @@ if (n_docs_addition < 500) {
   topic_k_range_addition <- seq(5, 25, by = 5)
 }
 
-ojs_define(topic_k_min_addition_ojs  = min(topic_k_range_addition))
-ojs_define(topic_k_max_addition_ojs  = max(topic_k_range_addition))
-ojs_define(topic_k_step_addition_ojs = diff(topic_k_range_addition)[1])
+# topic_k_*_addition are exported to OJS after this chunk below
 
 topicmodels_json_ldavis_safe <- function(fitted, original_texts, dtm) {
   valid_rows <- which(rowSums(as.matrix(dtm)) > 0)
@@ -1267,8 +1294,16 @@ addition_topic_folders <- as.list(c(
   "Combined View (Added + Original)" = file.path(addition_vis_base, "ldavis_combined_add")
 )[addition_topic_choices])
 
-ojs_define(addition_topic_choices_ojs = addition_topic_choices)
-ojs_define(addition_topic_folders_ojs = addition_topic_folders)
+```
+
+```{r results='asis', echo=FALSE, message=FALSE, warning=FALSE}
+ojs_static_define(
+  topic_k_min_addition_ojs   = min(topic_k_range_addition),
+  topic_k_max_addition_ojs   = max(topic_k_range_addition),
+  topic_k_step_addition_ojs  = diff(topic_k_range_addition)[1],
+  addition_topic_choices_ojs = addition_topic_choices,
+  addition_topic_folders_ojs = addition_topic_folders
+)
 ```
 
 Use the slider and dropdown below to choose the number of topics (*k*) and the dataset to inspect - matching the "Number of Topics" and "Show Topics For" controls of the interactive Datcha app. All *k* values are pre-computed, so the visualization updates instantly. **Click a topic circle to see its top terms, then try the λ slider.**
