@@ -611,7 +611,7 @@ Topic modeling results are sensitive to the chosen number of topics (*k*). Inste
 MAX_DOCS_FOR_TOPIC_MODELING <- 8000
 
 # Base output directory for deletion-section topic model visualizations
-deletion_vis_base <- "topic_models/deletion"
+deletion_vis_base <- "topic_models_datafiles/deletion"
 dir.create(deletion_vis_base, recursive = TRUE, showWarnings = FALSE)
 
 # Decide k range and step based on dataset size
@@ -1156,7 +1156,7 @@ As in the Data Deletion section, LDA models are pre-computed for a range of *k* 
 
 ```{r message=FALSE, warning=FALSE, results='hide'}
 # Base output directory for addition-section topic model visualizations
-addition_vis_base <- "topic_models/addition"
+addition_vis_base <- "topic_models_datafiles/addition"
 dir.create(addition_vis_base, recursive = TRUE, showWarnings = FALSE)
 
 # Decide k range and step based on dataset size
