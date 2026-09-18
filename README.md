@@ -1,6 +1,6 @@
-# Datcha - Quarto Tutorial
+# Datcha - A Tool to Track Data Changes and Measure (In)Consistency in Mobile Platform Data
 
-A tutorial that shows how to track changes between two snapshots of a social media dataset.
+Quarto Tutorial - It shows that how to track changes between two snapshots of a social media dataset.
 
 It finds **deleted posts**, **added posts**, and **edited posts**, then studies how they differ using word frequency, sentiment, keyness, topic modeling, and edit distance.
 
@@ -77,8 +77,7 @@ Your data must be anonymised before you use it.
 
 - **Open the page with Render or a web server.** If you double-click `index.html` and open it as a file, the topic model plots stay blank. This is a browser rule, not a bug.
 - **The λ slider needs a topic first.** In the topic plots, click a topic circle on the left. Only then does the λ slider re-sort the words. With no topic picked, the slider does nothing.
-- **Big data is cut down.** Topic modeling uses at most 8000 posts. You can change this at [line 589](index.qmd#L589).
-
+- **Big data is cut down.** Topic modeling uses at most 8000 posts, set by `MAX_DOCS_FOR_TOPIC_MODELING` in the `index.qmd` file. Change this value if you want to include more (or fewer) posts.
 ---
 
 ## Help
