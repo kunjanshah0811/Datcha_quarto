@@ -1,11 +1,11 @@
 cff-version: 1.2.0
 message: "If you use this tool, please cite it as below."
-title: "Datcha - Tracking the Ephemeral Web: A Reproducible Computational Tool for Quantifying Temporal Change in Longitudinal Social Media Datasets"
+title: "Datcha - A Tool to Track Data Changes and Measure (In)Consistency in Mobile Platform Data"
 authors:
   - family-names: "Shah"
     given-names: "Kunjan"
     affiliation: "GESIS - Leibniz Institute for the Social Sciences"
-    orchid: "https://orcid.org/0009-0008-5112-5555"
+    orcid: "https://orcid.org/0009-0008-5112-5555"
   - family-names: "Peters"
     given-names: "Yannik"
     affiliation: "GESIS - Leibniz Institute for the Social Sciences"
@@ -14,6 +14,10 @@ date-released: "2026-07-12"
 version: "1.0.0"
 url: "https://shiny.gesis.org/datcha/"
 repository-code: "https://github.com/kunjanshah0811/Datcha_quarto"
+identifiers:
+  - type: url
+    value: "https://kodaqs-toolbox.gesis.org/github.com/kunjanshah0811/Datcha_quarto/index/"
+    description: "KODAQS Toolbox tutorial page"
 keywords:
   - "Data Quality"
   - "Temporal Change"
