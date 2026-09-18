@@ -61,14 +61,13 @@ The tutorial opens as a web page. First render is slow, because all topic models
 ---
 
 ## Use your own data
+Open `index.qmd` and change these:
 
-Open `index.qmd` and change these lines:
-
-| Line | Change |
+| Where | Change |
 |---|---|
-| [80](index.qmd#L80) | Path to your two CSV files. A URL or a local file works. |
-| [107](index.qmd#L107) | Name of your ID column. |
-| [125](index.qmd#L125) | The two collection dates. Date 1 must be earlier. |
+| Section **2.2 Load Your Two Datasets** (`data1`, `data2`) | Path to your two CSV files. A URL or a local file path works. |
+| Section **2.3 Enter ID Column and Dates** (`id_col_1`, `id_col_2`) | Name of your ID column. |
+| Section **2.3 Enter ID Column and Dates** (`date_1`, `date_2`) | The two collection dates. `date_1` must be earlier. |
 
 Your data must be anonymised before you use it.
 
