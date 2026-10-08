@@ -263,9 +263,9 @@ sections.
 
 Text Cleaning: <br>Raw text is normalised through a standard
 preprocessing pipeline: lowercasing, removal of numbers, punctuation,
-and stopwords, followed by whitespace stripping. Lemmatization is
-applied by default to reduce words to their base forms; stemming is
-available as an alternative but disabled unless explicitly specified.
+and stopwords, followed by whitespace stripping. Lemmatization and
+stemming are available as optional steps to reduce words to their base
+forms, but both are disabled unless explicitly specified.
 
 Word Frequency: <br> Cleaned text is transformed into a document-term
 matrix from which term frequencies are extracted and ranked in
@@ -406,11 +406,14 @@ highchart() %>%
                 color = "#4CAF50", showInLegend = FALSE) %>%
   hc_exporting(enabled = TRUE)
 ```
-In the removed posts, the most frequently occurring term is *just* (34 times), followed
-by *new* (18) and *find* (9). Other recurring terms include *change*, *get*, *know*,
-*life*, *month*, *nature*, and *sleep* (each appearing 6-7 times). The lexical profile
+In the removed posts, the most frequently occurring term is *find* (9 times), followed
+by *change* (7). Other recurring terms include *life*, *sleep*, *month*, and *nature*
+(each appearing 6 times), and *home*, *year*, *grocery*, and *attempt* (5 times each).
+Terms such as *company*, *time*, *start*, *minute*, *favorite*, *purchase*, *completely*,
+*make*, *real*, and *worth* follow with 4 occurrences each. The lexical profile
 suggests that removed content was largely centred around everyday personal experiences
 and routine observations.
+
 ```{r message=FALSE, warning=FALSE}
 # Top words in Remaining posts
 cleaned_remaining <- text_processor$clean(remaining_posts$text, use_stem = FALSE, use_lemma = TRUE)
@@ -434,12 +437,14 @@ highchart() %>%
                 color = "#2196F3", showInLegend = FALSE) %>%
   hc_exporting(enabled = TRUE)
 ```
-In the remaining posts, *just* also dominates (60 times), followed by *get* and *new*
-(22 each), *time* (18), and *day* (17). The higher raw frequencies in remaining posts
-are expected given the larger subset size. Shared high-frequency terms across both
-groups indicate no substantial differences and broad topical overlap. At the same time,
-differences in lower-ranked terms may reflect content-specific variation worth
-exploring further. One option is to conduct a keyness analysis, which statistically identifies terms that are over- or under-represented in removed posts relative to remaining posts.
+In the remaining posts, the most frequently occurring term is *time* (19 times), followed
+by *day* (17), *today* (15), *find* (13), and *make* (12). Other recurring terms include
+*work* (11), *life* and *hour* (10 each), and *finish*, *favorite*, *week*, and *year*
+(9 each). The higher raw frequencies in remaining posts are expected given the larger
+subset size. Several high-frequency terms, such as *find*, *life*, *make*, *time*,
+*favorite*, and *year*, also appear among the top terms in the removed posts, indicating
+broad topical overlap between the two groups. At the same time, differences in lower-ranked
+terms may reflect content-specific variation worth exploring further. One option is to conduct a keyness analysis, which statistically identifies terms that are over- or under-represented in removed posts relative to remaining posts.
 
 #### 3.1.2 Keyness Analysis
 
@@ -590,11 +595,10 @@ p(
 )
 )
 ```
-
 The keyness analysis identifies *purchase*, *completely*, *email*,
 *sleep*, and *tweet* as statistically overrepresented in removed posts,
 pointing towards transactional and platform-referential language. In
-contrast, *work*, *week*, *anyone*, *apartment*, and *old* are more
+contrast, *work*, *week*, *apartment*, *today*, and *old* are more
 characteristic of remaining posts, reflecting everyday social and
 domestic topics. All terms exceed the log-likelihood threshold of 3.84,
 indicating that these differences are statistically meaningful rather
@@ -790,12 +794,12 @@ output_text <- paste0(
 
 cat(output_text)
 ```
-Among removed posts, approximately 42.6% were classified as positive, 39.8% as neutral,
-and 17.6% as negative. The distribution of remaining posts follows a closely comparable
-pattern, with 41.2% positive, 41.5% neutral, and 17.3% negative. Across both subsets,
-positive and neutral content collectively responsible for over 80% of posts, while negative
-content remains a minor proportion in each case. This synthetic example suggests that deleted posts do not exhibit a markedly different sentiment profile from the content that persists, indicating that removal may not be systematically associated with affective tone. If removed posts had a higher proportion of negative sentiment, this could suggest that users or platform moderation systems selectively removed more negatively valenced content. We argue that sentiment differences should be interpreted case by case, so we do not propose a generalizable threshold for what constitutes a meaningful difference in sentiment distribution. Instead, researchers should consider the specific context of their data and research questions when evaluating sentiment differences between removed and remaining posts.
-
+Among removed posts, approximately 71.0% were classified as positive, 24.0% as negative,
+and 5.0% as neutral. The distribution of remaining posts follows a closely comparable
+pattern, with 65.0% positive, 26.5% negative, and 8.5% neutral. Across both subsets,
+positive content clearly dominates, while neutral content remains a small proportion in
+each case. Removed posts are slightly more positive (+6.0 percentage points) and slightly
+less negative (-2.5 points) than remaining posts, but these differences are small. This synthetic example suggests that deleted posts do not exhibit a markedly different sentiment profile from the content that persists, indicating that removal may not be systematically associated with affective tone. If removed posts had a higher proportion of negative sentiment, this could suggest that users or platform moderation systems selectively removed more negatively valenced content. We argue that sentiment differences should be interpreted case by case, so we do not propose a generalizable threshold for what constitutes a meaningful difference in sentiment distribution. Instead, researchers should consider the specific context of their data and research questions when evaluating sentiment differences between removed and remaining posts.
 
 #### 3.1.4 Topic Modeling
 
@@ -1049,12 +1053,13 @@ offer the best balance for interpreting topics. The combined view allows
 a comparative assessment of whether removed and remaining posts occupy
 similar or divergent thematic spaces.
 
-When inspecting the intertopic distance maps, we observe both
-differences and similarities in topic positions. When choosing the
-5-topic solution, most modeled topics cluster around frequently used
-terms such as "just." Substantial deviations are rare. The only topic
-where "just" is not among the most prevalent terms is topic 2 of the
-remaining-data model, where "day," "try," and "good" are most common.
+When inspecting the intertopic distance maps, we observe both differences and
+similarities in topic positions. When choosing the 5-topic solution, most modeled
+topics are well separated, with only topics 1 and 5 of the remaining-data model
+overlapping. Across the models, topics cluster around frequently used terms such as
+"find," "life," and "change" in the removed posts, and "store," "day," "time," and
+"today" in the remaining posts, while "find," "back," "change," and "favorite" lead in
+the combined view. Substantial deviations are rare.
 
 ### 3.2 Data Addition
 
@@ -1119,12 +1124,14 @@ highchart() %>%
   hc_exporting(enabled = TRUE)
 
 ```
-Among added posts, the most frequent term is *new* (25 times), followed by *think* (20)
-and a cluster of terms; *check*, *explore*, *highly*, *recommend*, *relate*, *spot*,
-and *today* - each appearing 17 times. Further down, *company*, *good*, *plan*, *relax*,
-and *weekend* occur 13 times each. The lexical profile of added posts suggests a
+Among added posts, the most frequent terms form a cluster of *check*, *explore*, *highly*,
+*recommend*, *relate*, *spot*, and *today* - each appearing 17 times. Further down,
+*company*, *good*, *plan*, *relax*, and *weekend* occur 13 times each, followed by *day*,
+*happiness*, *make*, *stop*, *think*, *afternoon*, *spend*, *totally*, and *weekendvibes*
+with 11 occurrences each. The lexical profile of added posts suggests a
 notably discovery and recommendation-oriented tone, with terms pointing toward
 exploratory and evaluative content.
+
 ```{r message=FALSE, warning=FALSE}
 # Define original posts (posts present in Dataset 1 and still in Dataset 2)
 original_posts <- data2 %>%
@@ -1152,9 +1159,9 @@ highchart() %>%
                 color = "#2196F3", showInLegend = FALSE) %>%
   hc_exporting(enabled = TRUE)
 ```
-In original posts, *just* dominates (60 times), followed by *get* and *new* (22 each)
-and *time* (18). Compared to added posts, original posts reflect more general,
-everyday language with less directional or evaluative character. Still, we find some overlap in high-frequency terms, which appears prominently in both subsets (e.g.new, day, today, good). This suggests that while added posts introduce new content, they also share some lexical commonality with existing posts.
+In original posts, *time* is the most frequent term (18 times), followed by *day* (17),
+*today* (15), *find* (13), and *make* (12). Compared to added posts, original posts reflect more general,
+everyday language with less directional or evaluative character. Still, we find some overlap in high-frequency terms, which appears prominently in both subsets (e.g. today, day, make). This suggests that while added posts introduce new content, they also share some lexical commonality with existing posts.
 
 #### 3.2.2 Keyness Analysis
 
@@ -1300,7 +1307,7 @@ div(style = "margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius
 )
 ```
 Terms statistically overrepresented in added posts include *check*, *relate*, *explore*,
-*spot*, and *think*, all with high log-likelihood values and positive log ratios - indicating these words appear far more frequently in added content than would be expected by chance. Conversely, *time*, *find*, *now*, *first*, and *just* are more characteristic of original posts. This pattern reinforces the word frequency findings, suggesting that added posts carry a more active, exploratory vocabulary relative to the baseline corpus.
+*spot*, and *highly*, all with high log-likelihood values and positive log ratios - indicating these words appear far more frequently in added content than would be expected by chance. Conversely, *time*, *find*, *life*, *hour*, and *finish* are more characteristic of original posts. This pattern reinforces the word frequency findings, suggesting that added posts carry a more active, exploratory vocabulary relative to the baseline corpus.
 
 #### 3.2.3 Sentiment Analysis
 
@@ -1475,9 +1482,9 @@ output_text <- paste0(
 
 cat(output_text)
 ```
-Among added posts, 58.3% were classified as positive, 39.2% as neutral, and only 2.5%
+Among added posts, 93.1% were classified as positive, 5.9% as neutral, and only 1.0%
 as negative; a markedly more positive distribution compared to original posts, which
-show 41.2% positive, 41.5% neutral, and 17.3% negative. The near-absence of negative
+show 65.0% positive, 8.5% neutral, and 26.5% negative. The near-absence of negative
 sentiment in added posts is a notable contrast, suggesting that newly introduced content
 within the observation window skews considerably more positive in tone. In such a case, we recommend consider the context of the data and use case, as well as potential biases in user behavior that may influence the sentiment profile of newly added posts. In this artificial example, selecting only one of the two collection points may have introduced a bias toward more positive or negative content, which could be due to various factors such as user engagement patterns, platform moderation, or temporal trends in posting behavior. We recommend being as transparent as possible about the data collection process and considering potential biases when interpreting sentiment differences between added and original posts.
 
@@ -1638,7 +1645,6 @@ ojs_static_define(
   addition_topic_folders_ojs = addition_topic_folders
 )
 ```
-
 Use the slider and dropdown below to choose the number of topics (*k*)
 and the dataset to inspect - matching the "Number of Topics" and "Show
 Topics For" controls of the interactive Datcha app. All *k* values are
@@ -1665,7 +1671,6 @@ viewof topic_dataset_addition = Inputs.select(
 //| echo: false
 html`<iframe src="${addition_topic_folders_ojs[topic_dataset_addition]}_k${num_topics_addition}/index.html" width="100%" height="850px" style="border:none; margin-bottom:40px;"></iframe>`
 ```
-
 Topic modeling was applied to added posts, original posts, and a
 combined view using LDA, following the same procedure described in the
 Data Deletion section. While the deleted posts showed little thematic
